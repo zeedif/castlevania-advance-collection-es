@@ -240,7 +240,7 @@ def descargar_herramienta(progress=None):
         raise InstallError("La descarga no contiene MArchiveBatchTool.")
     if os.name != "nt":
         os.chmod(t, 0o755)
-    log("Herramienta lista.")
+    log("MArchiveBatchTool descargada.")
     return t
 
 
@@ -322,17 +322,20 @@ def instalar(juego, tool, parches, datos, menus=True):
     windata = os.path.join(juego, DATA_DIR)
     bin_p, idx_p = os.path.join(windata, "alldata.bin"), os.path.join(windata, "alldata.psb.m")
     os.makedirs(BACKUP, exist_ok=True)
+    nueva_copia = False
     for p in (bin_p, idx_p):
         dst = os.path.join(BACKUP, os.path.basename(p))
         if not os.path.exists(dst):
             shutil.copy2(p, dst)
-            log("Copia de seguridad guardada en la carpeta 'backup'.")
+            nueva_copia = True
+    if nueva_copia:
+        log("Copia de seguridad guardada en la carpeta 'backup'.")
     work = tempfile.mkdtemp(prefix="cvadv_")
     suelto = os.path.join(windata, "alldata.psb")           # la herramienta lo deja junto al índice al abrirlo
     habia_suelto = os.path.exists(suelto)
     try:
         raw = os.path.join(work, "raw")
-        log("Abriendo el archivo del juego (puede tardar un par de minutos)...")
+        log("Abriendo el archivo del juego...")
         run_tool(tool, "archive", "extract", "--codec", "zlib", "--seed", SEED, "--keyLength", KEYLEN, idx_p, raw)
         for clave, parche in parches.items():
             cfg = JUEGOS[clave]
@@ -396,10 +399,13 @@ def restaurar(juego):
 
 
 def resumen_final(claves):
-    log("\nListo. En el juego, abre «Versión del juego» (el icono del globo al final del menú) y elige:")
+    if not claves:
+        return
+    log("\nEn «Versión del juego» (el icono del globo, al final del carrusel) elige:")
     for k in claves:
         log("  • %s: versión %s" % (JUEGOS[k]['nombre'], JUEGOS[k]['version']))
-    log("En Aria of Sorrow, elige «Español» en su pantalla de idioma.")
+    if 'aria' in claves:
+        log("En Aria of Sorrow, elige «Español» en su pantalla de idioma.")
 
 
 # ------------------------------------------------------------------ interfaz gráfica
@@ -418,64 +424,68 @@ def run_gui():
             pass
     root = tk.Tk()
     root.title("Castlevania Advance Collection: traducción al español")
-    root.geometry("940x780")
-    root.minsize(820, 640)
-    st = {'juego': None, 'tool': None, 'parches': {}, 'busy': False, 'manual': None}
+    root.geometry("900x640")
+    root.minsize(780, 520)
+    st = {'juego': None, 'tool': None, 'parches': {}, 'unk': [], 'busy': False, 'manual': None, 'firma': None}
     pad = dict(padx=8, pady=4)
     style = ttk.Style()
     try:
         style.theme_use("vista" if os.name == "nt" else "clam")
     except tk.TclError:
         pass
+    try:
+        import menus_es  # noqa
+        hay_menus = True
+    except ImportError:
+        hay_menus = False
 
     frm = ttk.Frame(root, padding=10); frm.pack(fill="both", expand=True)
     ttk.Label(frm, text="Castlevania Advance Collection en español", font=("Segoe UI", 15, "bold")).pack(anchor="w")
-    ttk.Label(frm, text="Circle of the Moon, Harmony of Dissonance y Aria of Sorrow. Cierra el juego antes de instalar.").pack(anchor="w", pady=(0, 6))
+    ttk.Label(frm, text="Cierra el juego antes de instalar.").pack(anchor="w", pady=(0, 6))
 
     f1 = ttk.LabelFrame(frm, text="1. Carpeta del juego"); f1.pack(fill="x", **pad)
     v_game = tk.StringVar()
-    ttk.Label(f1, textvariable=v_game, wraplength=700).pack(side="left", padx=8, pady=6, fill="x", expand=True)
+    ttk.Label(f1, textvariable=v_game, wraplength=680).pack(side="left", padx=8, pady=6, fill="x", expand=True)
     ttk.Button(f1, text="Examinar…", command=lambda: elegir_juego()).pack(side="right", padx=8)
 
-    f2 = ttk.LabelFrame(frm, text="2. MArchiveBatchTool (abre el archivo del juego)"); f2.pack(fill="x", **pad)
+    f2 = ttk.LabelFrame(frm, text="2. MArchiveBatchTool"); f2.pack(fill="x", **pad)
     v_tool = tk.StringVar()
-    ttk.Label(f2, textvariable=v_tool, wraplength=700).pack(side="left", padx=8, pady=6, fill="x", expand=True)
+    ttk.Label(f2, textvariable=v_tool, wraplength=680).pack(side="left", padx=8, pady=6, fill="x", expand=True)
     b_tool = ttk.Button(f2, text="Descargar", command=lambda: descargar()); b_tool.pack(side="right", padx=8)
 
-    f3 = ttk.LabelFrame(frm, text="3. Parches de los traductores: déjalos junto a este programa, en esta misma carpeta")
+    f3 = ttk.LabelFrame(frm, text="3. Parches junto al programa")
     f3.pack(fill="x", **pad)
     f3.columnconfigure(1, weight=1)
-    rows = {}
-    for i, (k, cfg) in enumerate(JUEGOS.items()):
-        ttk.Label(f3, text="%s\n%s" % (cfg['nombre'], cfg['autor']), width=36).grid(row=i, column=0, sticky="w", padx=8, pady=3)
-        v = tk.StringVar()
-        ttk.Label(f3, textvariable=v, wraplength=360).grid(row=i, column=1, sticky="w", padx=4)
-        ttk.Button(f3, text="Abrir página de descarga", command=lambda u=cfg['web']: webbrowser.open(u)).grid(row=i, column=2, padx=8)
-        rows[k] = v
+    rows, b_inst = {}, {}
+    claves = (["menus"] if hay_menus else []) + list(JUEGOS)
+    for i, k in enumerate(claves):
+        if k == "menus":
+            ttk.Label(f3, text="Menús de la colección", width=34).grid(row=i, column=0, sticky="w", padx=8, pady=5)
+        else:
+            cfg = JUEGOS[k]
+            ttk.Label(f3, text="%s\n%s" % (cfg['nombre'], cfg['autor']), width=34).grid(row=i, column=0, sticky="w", padx=8, pady=3)
+            v = tk.StringVar()
+            ttk.Label(f3, textvariable=v, wraplength=330).grid(row=i, column=1, sticky="w", padx=4)
+            ttk.Button(f3, text="Abrir página", command=lambda u=cfg['web']: webbrowser.open(u)).grid(row=i, column=2, padx=4)
+            rows[k] = v
+        b = ttk.Button(f3, text="Instalar", command=lambda k=k: instalar_click(k)); b.grid(row=i, column=3, padx=(4, 8))
+        b_inst[k] = b
     v_unk = tk.StringVar()
-    ttk.Label(f3, textvariable=v_unk, foreground="#a33", wraplength=640).grid(row=len(JUEGOS), column=0, columnspan=2, sticky="w", padx=8)
-    ttk.Label(f3, text="Los parches se reconocen por su contenido, no por el nombre del archivo. Valen .ips sueltos o dentro de un .zip, .rar o .7z (solo en esta carpeta, sin subcarpetas).",
-              foreground="#555", wraplength=640).grid(row=len(JUEGOS) + 1, column=0, columnspan=2, sticky="w", padx=8, pady=(2, 6))
-    b_scan = ttk.Button(f3, text="Volver a buscar", command=lambda: refrescar()); b_scan.grid(row=len(JUEGOS) + 1, column=2, padx=8, pady=(2, 6))
+    ttk.Label(f3, textvariable=v_unk, foreground="#a33", wraplength=640).grid(row=len(claves), column=0, columnspan=4, sticky="w", padx=8)
 
-    f4 = ttk.Frame(frm); f4.pack(fill="x", **pad)
-    v_menus = tk.BooleanVar(value=True)
-    try:
-        import menus_es  # noqa
-        ttk.Checkbutton(f4, text="Traducir también los menús de la colección (pausa, avisos, carga…)", variable=v_menus).pack(side="left")
-    except ImportError:
-        v_menus.set(False)
-    b_inst = ttk.Button(f4, text="Instalar", command=lambda: instalar_click()); b_inst.pack(side="right", padx=4)
-    v_menus.trace_add("write", lambda *_: refrescar())
-    b_rest = ttk.Button(f4, text="Restaurar originales", command=lambda: restaurar_click()); b_rest.pack(side="right", padx=4)
-
-    prog = ttk.Progressbar(frm, mode="determinate", maximum=100); prog.pack(fill="x", padx=8, pady=2)
+    prog = ttk.Progressbar(frm, mode="determinate", maximum=100); prog.pack(fill="x", padx=8, pady=(8, 2))
     txt = tk.Text(frm, height=10, wrap="word", state="disabled", font=("Consolas", 9)); txt.pack(fill="both", expand=True, **pad)
-    a = ttk.Label(frm, text="Código y avisos: " + REPO_URL, foreground="#1a5fb4", cursor="hand2"); a.pack(anchor="w")
+    f4 = ttk.Frame(frm); f4.pack(fill="x", padx=8)
+    a = ttk.Label(f4, text=REPO_URL, foreground="#1a5fb4", cursor="hand2"); a.pack(side="left")
     a.bind("<Button-1>", lambda e: webbrowser.open(REPO_URL))
+    b_rest = ttk.Button(f4, text="Restaurar originales", command=lambda: restaurar_click()); b_rest.pack(side="right")
 
     def put(msg):
         txt.configure(state="normal"); txt.insert("end", msg + "\n"); txt.see("end"); txt.configure(state="disabled")
+
+    def sep():
+        if txt.get("1.0", "end").strip():
+            put("")
 
     def pump():
         try:
@@ -488,29 +498,44 @@ def run_gui():
             pass
         root.after(100, pump)
 
-    def set_busy(b):
-        st['busy'] = b
-        for w in (b_inst, b_rest, b_scan, b_tool):
-            w.configure(state="disabled" if b else "normal")
-        if b:
-            prog.configure(mode="indeterminate"); prog.start(12)
-        else:
-            prog.stop(); prog.configure(mode="determinate", value=0)
+    def firma():
+        out = []
+        try:
+            for f in sorted(os.listdir(APP_DIR)):
+                if f.lower().endswith((".ips", ".zip", ".rar", ".7z")):
+                    s = os.stat(os.path.join(APP_DIR, f))
+                    out.append((f, s.st_size, s.st_mtime_ns))
+        except OSError:
+            pass
+        return tuple(out)
 
     def refrescar():
         st['juego'] = find_juego(st['manual'])
-        v_game.set(st['juego'] or "No se encontró. Pulsa «Examinar» y elige la carpeta de Castlevania Advance Collection.")
+        v_game.set(st['juego'] or "Falta")
         st['tool'] = find_tool()
-        v_tool.set("Lista." if st['tool'] else "No se encontró. Pulsa «Descargar» (se baja de GitHub, unos 70 MB) o déjala junto a este programa.")
+        v_tool.set(os.path.basename(st['tool']) if st['tool'] else "Falta")
         b_tool.configure(state="disabled" if st['tool'] else "normal")
-        st['parches'], unk = buscar_parches(datos)
+        f = firma()
+        if f != st['firma']:                                  # los archivos de la carpeta cambiaron (o es la primera vez)
+            st['firma'] = f
+            st['parches'], st['unk'] = buscar_parches(datos)
         for k, v in rows.items():
             p = st['parches'].get(k)
-            v.set(("Encontrado: " + p.label) if p else "Falta")
-        v_unk.set(("Archivos .ips que no coinciden con ninguna versión conocida (se ignoran): " + ", ".join(unk)) if unk else "")
-        listo = bool(st['juego'] and st['tool'] and (st['parches'] or v_menus.get()))
-        b_inst.configure(state="normal" if listo else "disabled")
-        b_rest.configure(state="normal" if st['juego'] and os.path.isfile(os.path.join(BACKUP, "alldata.bin")) else "disabled")
+            v.set(p.label if p else "Falta")
+        v_unk.set("Sin reconocer: " + ", ".join(st['unk']) if st['unk'] else "")
+        base = bool(st['juego'] and st['tool'] and not st['busy'])
+        for k, b in b_inst.items():
+            b.configure(state="normal" if base and (k == "menus" or k in st['parches']) else "disabled")
+        b_rest.configure(state="normal" if st['juego'] and not st['busy'] and os.path.isfile(os.path.join(BACKUP, "alldata.bin")) else "disabled")
+
+    def set_busy(b):
+        st['busy'] = b
+        if b:
+            for w in list(b_inst.values()) + [b_rest, b_tool]:
+                w.configure(state="disabled")
+            prog.configure(mode="indeterminate"); prog.start(12)
+        else:
+            prog.stop(); prog.configure(mode="determinate", value=0)
 
     def elegir_juego():
         d = filedialog.askdirectory(title="Carpeta de Castlevania Advance Collection")
@@ -536,28 +561,26 @@ def run_gui():
         refrescar()
         if err:
             put("\n¡Error! " + err); messagebox.showerror("No se pudo completar", err[:600])
-        else:
-            messagebox.showinfo("Listo", "Proceso terminado. Revisa el registro para los siguientes pasos.")
 
     def descargar():
         worker(lambda: descargar_herramienta(lambda f: q.put(("prog", f))))
 
-    def instalar_click():
-        sel = dict(st['parches'])
-        partes = ["%d traducción(es) de juego" % len(sel)] if sel else []
-        if v_menus.get():
-            partes.append("los menús de la colección")
-        if not messagebox.askyesno("Instalar", "Se va a reconstruir el archivo del juego con %s.\nSe guarda una copia de seguridad junto a este programa.\n\n¿Continuar?" % " y ".join(partes)):
-            return
+    def instalar_click(k):
         def job():
-            instalar(st['juego'], st['tool'], sel, datos, menus=v_menus.get())
-            resumen_final(list(sel))
+            if k == "menus":
+                instalar(st['juego'], st['tool'], {}, datos, menus=True)
+            else:
+                instalar(st['juego'], st['tool'], {k: st['parches'][k]}, datos, menus=False)
+                resumen_final([k])
+        sep()
         worker(job)
 
     def restaurar_click():
-        if messagebox.askyesno("Restaurar", "Se devuelven los archivos originales guardados en la carpeta «backup». ¿Continuar?"):
+        if messagebox.askyesno("Restaurar", "Se pierden las traducciones instaladas. ¿Restaurar los archivos originales?"):
+            sep()
             worker(lambda: restaurar(st['juego']))
 
+    root.bind("<FocusIn>", lambda e: e.widget is root and not st['busy'] and refrescar())
     refrescar(); pump()
     root.mainloop()
 

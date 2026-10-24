@@ -6,12 +6,10 @@ Instalador con interfaz gráfica que deja **Castlevania Advance Collection** (St
 
 ## Qué hace
 
-1. Abre el archivo de datos del juego (`alldata.bin`) con [MArchiveBatchTool](https://github.com/farmerbb/RED-Project/releases/tag/tools) (el instalador la descarga solo si no la tienes).
-2. Aplica los parches `.ips` de los traductores a las ROMs de GBA que lleva la colección. Los parches de *Harmony* y *Aria* chocan con dos bloques de código que Konami añadió a esas ROMs, así que antes se reubican (se comprueba byte a byte que el resultado es el mismo que aplicar el parche sobre la ROM original).
-3. Traduce los menús de la colección: imágenes con texto ya dibujado (menú de pausa, nombres de áreas, controles, enciclopedia, carrusel, historias de cada juego, carga…), textos de los menús y avisos, y las tildes y la ñ de las fuentes del juego.
-4. Reconstruye el archivo del juego. Antes guarda una **copia de seguridad** de los dos archivos originales en la carpeta `backup`, junto al instalador.
+Cada instalación abre el archivo de datos del juego (`alldata.bin`) con [MArchiveBatchTool](https://github.com/farmerbb/RED-Project/releases/tag/tools), cambia lo que le toca y lo reconstruye. La primera vez guarda una **copia de seguridad** de los dos archivos originales en la carpeta `backup`, junto al instalador.
 
-Todo ocurre en tu equipo y sobre tus propios archivos; en el repositorio solo hay código y los textos/imágenes en español dibujados desde cero.
+- **Cada juego**: aplica el parche `.ips` del traductor a la ROM de GBA que lleva la colección. Los parches de *Harmony* y *Aria* chocan con dos bloques de código que Konami añadió a esas ROMs, así que antes se reubican (se comprueba byte a byte que el resultado es el mismo que aplicar el parche sobre la ROM original).
+- **Menús de la colección**: imágenes con texto ya dibujado (menú de pausa, nombres de áreas, controles, enciclopedia, carrusel, historias de cada juego, carga…), textos de los menús y avisos, y las tildes y la ñ de las fuentes del juego.
 
 | Menú de pausa | Ajustes de controles |
 |---|---|
@@ -21,7 +19,7 @@ Todo ocurre en tu equipo y sobre tus propios archivos; en el repositorio solo ha
 
 - Windows 10/11 (en Linux o Steam Deck debería funcionar con Python, ver más abajo; sin probar).
 - **Castlevania Advance Collection** de Steam, versión 1.0.0, sin modificar. Si ya la tocaste, usa *Propiedades → Archivos instalados → Verificar la integridad de los archivos del juego* en Steam.
-- Los parches de traducción (se reconocen **por su contenido**, el nombre del archivo da igual):
+- Los parches de traducción:
 
 | Juego | Traducción | Dónde conseguirla |
 |---|---|---|
@@ -29,16 +27,13 @@ Todo ocurre en tu equipo y sobre tus propios archivos; en el repositorio solo ha
 | Castlevania: Harmony of Dissonance (versión europea) | Kishne, v2.0 (Update 3) | [MediaFire](https://www.mediafire.com/download/6cts4vbaath6sa7/Castlevania+-+Harmony+of+Dissonance+2.0+%28Update+3%29+~+By+Kishne.rar) |
 | Castlevania: Aria of Sorrow (versión europea) | Wastor, v1.0 | [wastor.romhackhispano.org/castlevania-aria-of-sorrow](https://wastor.romhackhispano.org/castlevania-aria-of-sorrow/) |
 
-No hace falta instalar los tres: el instalador usa los que encuentre.
-
 ## Cómo se usa
 
 1. Descarga `CastlevaniaAdvanceES.exe` de la [última versión](../../releases/latest) y ponlo en una carpeta propia, por ejemplo `Escritorio\CastlevaniaES`.
-2. **Deja en esa misma carpeta** los parches que descargaste (los `.ips`, o el `.zip`/`.rar`/`.7z` tal cual los bajaste). No hace falta descomprimir ni crear subcarpetas, y no se buscan en otras carpetas.
-3. Cierra el juego y abre `CastlevaniaAdvanceES.exe`.
-4. El programa encuentra solo la carpeta del juego (si no, pulsa *Examinar*) y avisa de qué parches ha reconocido. Si no tienes MArchiveBatchTool, pulsa **Descargar**: se baja y se guarda junto al programa.
-5. Pulsa **Instalar**. Tarda unos 20-30 segundos.
-6. Abre el juego, entra en **Versión del juego** (el icono del globo, al final del carrusel) y elige la versión que se tradujo: *americana* para Circle of the Moon, *europea* para Harmony y Aria. En *Aria of Sorrow* elige «Español» en su pantalla de idioma.
+2. Deja en esa misma carpeta los parches (los `.ips`, o el `.zip`/`.rar`/`.7z` tal cual los bajaste).
+3. Cierra el juego y abre `CastlevaniaAdvanceES.exe`. Si falta MArchiveBatchTool, pulsa **Descargar**.
+4. Pulsa **Instalar** en cada traducción que quieras. Cada una tarda unos 20-30 segundos y el registro de la ventana las va acumulando.
+5. En el juego, entra en **Versión del juego** (el icono del globo, al final del carrusel) y elige *americana* para Circle of the Moon o *europea* para Harmony y Aria. En *Aria of Sorrow* elige «Español» en su pantalla de idioma.
 
 ![Instalador](docs/instalador.png)
 
