@@ -19,7 +19,7 @@ Todo ocurre en tu equipo y sobre tus propios archivos; en el repositorio solo ha
 
 ## Qué necesitas
 
-- Windows 10/11 (también funciona con Python en Linux, ver más abajo).
+- Windows 10/11 (en Linux o Steam Deck debería funcionar con Python, ver más abajo; sin probar).
 - **Castlevania Advance Collection** de Steam, versión 1.0.0, sin modificar. Si ya la tocaste, usa *Propiedades → Archivos instalados → Verificar la integridad de los archivos del juego* en Steam.
 - Los parches de traducción (se reconocen **por su contenido**, el nombre del archivo da igual):
 
@@ -61,7 +61,7 @@ python instalar.py --cli [--game "<carpeta del juego>"] [--sin-menus]
 python instalar.py --restaurar [--game "<carpeta del juego>"]
 ```
 
-Sin argumentos se abre la interfaz gráfica. Funciona en Linux con Python 3 y `tkinter` (la herramienta se descarga en su versión para Linux).
+Sin argumentos se abre la interfaz gráfica. En Linux hace falta Python 3 (y `tkinter` para la ventana; si no está, usa `--cli`); la herramienta se descarga en su versión para Linux. Esa parte no la he probado.
 
 ## Cómo compilarlo tú mismo
 
