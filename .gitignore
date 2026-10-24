@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+.venv*/
+.build/
+dist/
+*.spec
+
+# lo que el instalador crea o usa junto al programa
+backup/
+MArchiveBatchTool/
+
+# parches y ROMs de terceros: no se distribuyen
+*.ips
+*.bps
+*.zip
+*.rar
+*.7z
+*.gba
+*.bin

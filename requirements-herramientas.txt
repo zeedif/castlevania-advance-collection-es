@@ -1,0 +1,4 @@
+# Solo para regenerar menus_es.dat (herramientas/menus_build.py) y compilar el .exe; el instalador no necesita nada.
+pillow
+numpy
+pyinstaller
